@@ -124,6 +124,11 @@ All colors MUST be HSL.
   }
 }
 
+/* Landing Page Dark Mode Background Override */
+.dark .landing-page-bg {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), var(--landing-bg) !important;
+}
+
 /* React Calendar Styling */
 .reminder-calendar .react-calendar {
   @apply w-full border-0 rounded-lg bg-transparent font-sans;

@@ -31,7 +31,20 @@ export const LandingPage = () => {
   ];
 
   return (
-    <BackgroundWrapper backgroundImage={landingBg}>
+    <div className="relative min-h-screen landing-page-wrapper">
+      {/* ₹500 Note Background with Gradient Overlay */}
+      <motion.div
+        initial={{ scale: 1.05, opacity: 0.9 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 1.5, ease: "easeOut" }}
+        className="landing-page-bg absolute inset-0 -z-10 bg-cover bg-right"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)), url(${landingBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center right",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
       <div className="container mx-auto px-4 py-20">
         {/* Hero Section */}
         <motion.div
@@ -125,6 +138,6 @@ export const LandingPage = () => {
           })}
         </div>
       </div>
-    </BackgroundWrapper>
+    </div>
   );
 };
