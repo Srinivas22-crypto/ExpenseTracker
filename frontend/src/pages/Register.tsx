@@ -28,10 +28,11 @@ export const Register = () => {
 
     try {
       await register(name, email, password);
-      toast.success("Registration successful!");
-      navigate("/dashboard");
+      // AuthContext already shows success toast, just navigate
+      navigate("/dashboard", { replace: true });
     } catch (error) {
-      toast.error("Registration failed. Please try again.");
+      // AuthContext already shows error toast
+      // Error is handled in AuthContext
     }
   };
 

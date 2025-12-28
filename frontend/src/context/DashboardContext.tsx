@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { dashboardService } from "@/services/dashboardService";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "react-toastify";
@@ -10,7 +10,7 @@ interface DashboardContextType {
   monthlyIncome: number;
   monthlyExpense: number;
   loading: boolean;
-  refreshDashboard: () => Promise<void>;
+  refreshDashboard: (month?: number, year?: number) => Promise<void>;
 }
 
 export const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -26,10 +26,10 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [loading, setLoading] = useState(true);
   const { isAuthenticated } = useAuth();
 
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async (month?: number, year?: number) => {
     try {
       setLoading(true);
-      const response = await dashboardService.getDashboardSummary();
+      const response = await dashboardService.getDashboardSummary(month, year);
       if (response.success) {
         setDashboardData({
           totalIncome: response.data.totalIncome,
@@ -48,7 +48,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Only load dashboard if user is authenticated
@@ -57,7 +57,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } else {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, loadDashboard]);
 
   return (
     <DashboardContext.Provider

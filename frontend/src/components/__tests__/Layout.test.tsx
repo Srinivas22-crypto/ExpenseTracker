@@ -1,15 +1,15 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { MenuProvider, useMenu } from '../../context/MenuContext';
 import { Layout } from '../Layout';
 
 const renderWithProviders = (component: React.ReactElement) => {
   return render(
-    <BrowserRouter>
+    <MemoryRouter>
       <MenuProvider>
         {component}
       </MenuProvider>
-    </BrowserRouter>
+    </MemoryRouter>
   );
 };
 

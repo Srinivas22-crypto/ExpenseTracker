@@ -1,61 +1,93 @@
 const asyncHandler = require('../utils/asyncHandler');
 const Income = require('../models/Income');
 const Transaction = require('../models/Transaction');
+const User = require('../models/User');
 
 // @desc    Get dashboard summary
 // @route   GET /api/dashboard
 // @access  Private
 exports.getDashboardSummary = asyncHandler(async (req, res) => {
   const userId = req.user._id;
+  const { month, year } = req.query;
 
-  // Get all income entries
-  const incomeEntries = await Income.find({ user: userId });
-  const totalIncome = incomeEntries.reduce((sum, entry) => sum + entry.amount, 0);
+  // Get all income entries and transactions
+  let incomeEntries = await Income.find({ user: userId }).sort({ date: -1 });
+  let transactions = await Transaction.find({ user: userId }).sort({ createdAt: -1 });
 
-  // Get all expense transactions
-  const expenseTransactions = await Transaction.find({ 
-    user: userId, 
-    type: 'expense' 
-  });
-  const totalExpense = expenseTransactions.reduce((sum, t) => sum + t.amount, 0);
+  // Filter by month and year if provided
+  if (month && year) {
+    const monthNum = parseInt(month, 10);
+    const yearNum = parseInt(year, 10);
+    
+    // Helper function to parse date
+    const parseDate = (dateStr) => {
+      if (!dateStr) return null;
+      let date;
+      
+      if (dateStr.includes('-')) {
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+          date = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        }
+      } else if (dateStr.includes('/')) {
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+          date = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+        }
+      }
+      
+      if (!date || isNaN(date.getTime())) return null;
+      return date;
+    };
 
-  // Calculate balance
-  const balance = totalIncome - totalExpense;
+    // Filter income entries
+    incomeEntries = incomeEntries.filter((income) => {
+      const incomeDate = parseDate(income.date);
+      if (!incomeDate) return false;
+      return incomeDate.getFullYear() === yearNum && 
+             incomeDate.getMonth() + 1 === monthNum;
+    });
 
-  // Get recent transactions (last 10)
-  const recentTransactions = await Transaction.find({ user: userId })
-    .sort({ createdAt: -1 })
-    .limit(10);
+    // Filter transactions
+    transactions = transactions.filter((transaction) => {
+      const transactionDate = parseDate(transaction.date);
+      if (!transactionDate) return false;
+      return transactionDate.getFullYear() === yearNum && 
+             transactionDate.getMonth() + 1 === monthNum;
+    });
+  }
 
-  // Get monthly breakdown
-  const currentMonth = new Date();
-  currentMonth.setDate(1);
-  currentMonth.setHours(0, 0, 0, 0);
+  // Calculate totals for filtered data
+  const monthlyIncome = incomeEntries.reduce((sum, entry) => sum + entry.amount, 0);
+  const monthlyExpense = transactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+  const balance = monthlyIncome - monthlyExpense;
 
-  const monthlyIncome = await Income.aggregate([
-    { $match: { user: userId, date: { $gte: currentMonth.toISOString().split('T')[0] } } },
-    { $group: { _id: null, total: { $sum: '$amount' } } }
-  ]);
+  // Get recent transactions (last 10 from filtered set)
+  const recentTransactions = transactions.slice(0, 10);
 
-  const monthlyExpense = await Transaction.aggregate([
-    { $match: { user: userId, type: 'expense', createdAt: { $gte: currentMonth } } },
-    { $group: { _id: null, total: { $sum: '$amount' } } }
-  ]);
-
-  const monthlyIncomeTotal = monthlyIncome[0]?.total || 0;
-  const monthlyExpenseTotal = monthlyExpense[0]?.total || 0;
+  // If no month/year specified, use all-time totals from user document
+  let totalIncome = monthlyIncome;
+  let totalExpense = monthlyExpense;
+  
+  if (!month || !year) {
+    const user = await User.findById(userId).select('totalIncome totalExpense totalBalance');
+    totalIncome = user?.totalIncome ?? monthlyIncome;
+    totalExpense = user?.totalExpense ?? monthlyExpense;
+  }
 
   res.status(200).json({
     success: true,
     data: {
-      totalIncome,
-      totalExpense,
+      totalIncome: monthlyIncome,
+      totalExpense: monthlyExpense,
       balance,
-      monthlyIncome: monthlyIncomeTotal,
-      monthlyExpense: monthlyExpenseTotal,
+      monthlyIncome,
+      monthlyExpense,
       recentTransactions,
       incomeCount: incomeEntries.length,
-      expenseCount: expenseTransactions.length,
+      expenseCount: transactions.filter(t => t.type === 'expense').length,
     },
   });
 });

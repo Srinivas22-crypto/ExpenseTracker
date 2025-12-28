@@ -1,7 +1,7 @@
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createBrowserRouter, RouterProvider, Routes, Route, Navigate } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { TransactionProvider } from "@/context/TransactionContext";
@@ -22,12 +22,27 @@ import BackendTest from "./pages/BackendTest";
 
 const queryClient = new QueryClient();
 
+// Protected route - requires authentication
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+};
+
+// Public route - redirects to dashboard if already authenticated
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth();
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <>{children}</>;
 };
 
 // Create router configuration
+// Future flags prepare the app for React Router v7 migration
+// These flags enable v7 behaviors while maintaining v6 compatibility
 const routerConfig = createBrowserRouter(
   [
     {
@@ -36,15 +51,27 @@ const routerConfig = createBrowserRouter(
     },
     {
       path: "/login",
-      element: <Login />,
+      element: (
+        <PublicRoute>
+          <Login />
+        </PublicRoute>
+      ),
     },
     {
       path: "/register",
-      element: <Register />,
+      element: (
+        <PublicRoute>
+          <Register />
+        </PublicRoute>
+      ),
     },
     {
       path: "/forgot-password",
-      element: <ForgotPassword />,
+      element: (
+        <PublicRoute>
+          <ForgotPassword />
+        </PublicRoute>
+      ),
     },
     {
       path: "/test-backend",
@@ -65,7 +92,14 @@ const routerConfig = createBrowserRouter(
   ],
   {
     future: {
+      // v7_startTransition: Uses React's startTransition for navigations
+      // This makes route transitions non-blocking and improves perceived performance
+      // Required to suppress deprecation warnings and prepare for React Router v7
       v7_startTransition: true,
+      
+      // v7_relativeSplatPath: Changes how relative paths work with splat routes (*)
+      // This fixes edge cases with relative navigation in v7
+      // Recommended for better path resolution behavior
       v7_relativeSplatPath: true,
     },
   }

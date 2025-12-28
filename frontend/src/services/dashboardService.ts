@@ -18,8 +18,13 @@ export interface DashboardResponse {
 }
 
 export const dashboardService = {
-  getDashboardSummary: async (): Promise<DashboardResponse> => {
-    const response = await API.get('/dashboard');
+  getDashboardSummary: async (month?: number, year?: number): Promise<DashboardResponse> => {
+    const params: any = {};
+    if (month && year) {
+      params.month = month;
+      params.year = year;
+    }
+    const response = await API.get('/dashboard', { params });
     return response.data;
   },
 };

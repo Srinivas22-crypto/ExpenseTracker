@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import loginBg from "@/assets/backgrounds/login-bg.jpg";
 
@@ -20,10 +19,11 @@ export const Login = () => {
     e.preventDefault();
     try {
       await login(email, password);
-      toast.success("Login successful!");
-      navigate("/dashboard");
+      // AuthContext already shows success toast, just navigate
+      navigate("/dashboard", { replace: true });
     } catch (error) {
-      toast.error("Login failed. Please try again.");
+      // AuthContext already shows error toast
+      // Error is handled in AuthContext
     }
   };
 

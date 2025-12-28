@@ -22,6 +22,7 @@ const reminderRoutes = require('./routes/reminderRoutes');
 const incomeRoutes = require('./routes/incomeRoutes');
 const activityRoutes = require('./routes/activityRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const reportsRoutes = require('./routes/reportsRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -39,6 +40,14 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
 }));
+
+// Disable caching for API responses to prevent 304 requests
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  next();
+});
 
 // Request logger
 if (process.env.NODE_ENV === 'development') {
@@ -79,6 +88,7 @@ app.use('/api/reminders', reminderRoutes);
 app.use('/api/income', incomeRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
@@ -120,11 +130,57 @@ server.listen(PORT, () => {
   );
 });
 
+// Graceful shutdown handler
+const gracefulShutdown = (signal) => {
+  console.log(`\n${signal} received. Starting graceful shutdown...`.yellow);
+  
+  // Close HTTP server (stop accepting new connections)
+  server.close(() => {
+    console.log('✅ HTTP server closed'.green);
+    
+    // Close Socket.io server
+    io.close(() => {
+      console.log('✅ Socket.io server closed'.green);
+      
+      // Close MongoDB connection
+      const mongoose = require('mongoose');
+      if (mongoose.connection.readyState === 1) {
+        mongoose.connection.close(false, () => {
+          console.log('✅ MongoDB connection closed'.green);
+          console.log('👋 Server shutdown complete'.cyan);
+          process.exit(0);
+        });
+      } else {
+        console.log('✅ MongoDB connection already closed'.green);
+        console.log('👋 Server shutdown complete'.cyan);
+        process.exit(0);
+      }
+    });
+  });
+  
+  // Force shutdown after 10 seconds if graceful shutdown fails
+  setTimeout(() => {
+    console.error('❌ Forced shutdown after timeout'.red);
+    process.exit(1);
+  }, 10000);
+};
+
+// Handle termination signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
   console.log(`❌ Error: ${err.message}`.red);
   // Close server & exit process
   server.close(() => process.exit(1));
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.log(`❌ Uncaught Exception: ${err.message}`.red);
+  console.error(err.stack);
+  gracefulShutdown('uncaughtException');
 });
 
 module.exports = { app, server, io };

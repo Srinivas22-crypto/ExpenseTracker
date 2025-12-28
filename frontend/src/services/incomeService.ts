@@ -34,8 +34,13 @@ export interface IncomeStatsResponse {
 }
 
 export const incomeService = {
-  getIncome: async (): Promise<IncomesResponse> => {
-    const response = await API.get('/income');
+  getIncome: async (month?: number, year?: number): Promise<IncomesResponse> => {
+    const params: any = {};
+    if (month && year) {
+      params.month = month;
+      params.year = year;
+    }
+    const response = await API.get('/income', { params });
     return response.data;
   },
 

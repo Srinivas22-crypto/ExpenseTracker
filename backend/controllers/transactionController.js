@@ -1,19 +1,76 @@
 const asyncHandler = require('../utils/asyncHandler');
 const Transaction = require('../models/Transaction');
 const UserActivity = require('../models/UserActivity');
+const User = require('../models/User');
 
 // @desc    Get all transactions
 // @route   GET /api/transactions
 // @access  Private
 exports.getTransactions = asyncHandler(async (req, res) => {
-  const transactions = await Transaction.find({ user: req.user._id }).sort({
+  const { month, year } = req.query;
+  const query = { user: req.user._id };
+
+  let transactions = await Transaction.find(query).sort({
     createdAt: -1,
   });
+
+  // Filter by month and year if provided (client-side filtering for string dates)
+  if (month && year) {
+    const monthNum = parseInt(month, 10);
+    const yearNum = parseInt(year, 10);
+    
+    transactions = transactions.filter((transaction) => {
+      const dateStr = transaction.date;
+      if (!dateStr) return false;
+      
+      let transactionDate;
+      
+      // Try to parse ISO format (YYYY-MM-DD)
+      if (dateStr.includes('-')) {
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+          transactionDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        }
+      }
+      // Try to parse DD/MM/YYYY format
+      else if (dateStr.includes('/')) {
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+          // Assume DD/MM/YYYY format
+          transactionDate = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+        }
+      }
+      
+      if (!transactionDate || isNaN(transactionDate.getTime())) {
+        return false;
+      }
+      
+      return transactionDate.getFullYear() === yearNum && 
+             transactionDate.getMonth() + 1 === monthNum;
+    });
+  }
+
+  // Calculate totals for the filtered transactions
+  let incomeTotal = 0;
+  let expenseTotal = 0;
+
+  transactions.forEach((transaction) => {
+    if (transaction.type === 'income') {
+      incomeTotal += transaction.amount;
+    } else if (transaction.type === 'expense') {
+      expenseTotal += transaction.amount;
+    }
+  });
+
+  const balance = incomeTotal - expenseTotal;
 
   res.status(200).json({
     success: true,
     count: transactions.length,
     data: transactions,
+    incomeTotal,
+    expenseTotal,
+    balance,
   });
 });
 
@@ -66,6 +123,24 @@ exports.createTransaction = asyncHandler(async (req, res) => {
     description,
     date,
   });
+
+  // Update user running totals based on transaction type
+  if (type === 'income') {
+    await User.updateOne(
+      { _id: req.user._id },
+      { $inc: { totalIncome: amount } }
+    );
+  } else if (type === 'expense') {
+    await User.updateOne(
+      { _id: req.user._id },
+      { $inc: { totalExpense: amount } }
+    );
+  }
+  const userTotals = await User.findById(req.user._id).select('totalIncome totalExpense');
+  await User.updateOne(
+    { _id: req.user._id },
+    { $set: { totalBalance: userTotals.totalIncome - userTotals.totalExpense } }
+  );
 
   // Log transaction activity
   if (type === 'expense') {

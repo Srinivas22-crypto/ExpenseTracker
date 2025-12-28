@@ -1,14 +1,52 @@
 const asyncHandler = require('../utils/asyncHandler');
 const Income = require('../models/Income');
 const UserActivity = require('../models/UserActivity');
+const User = require('../models/User');
 
 // @desc    Get all income entries
 // @route   GET /api/income
 // @access  Private
 exports.getIncome = asyncHandler(async (req, res) => {
-  const incomeEntries = await Income.find({ user: req.user._id }).sort({
+  const { month, year } = req.query;
+  let incomeEntries = await Income.find({ user: req.user._id }).sort({
     date: -1,
   });
+
+  // Filter by month and year if provided
+  if (month && year) {
+    const monthNum = parseInt(month, 10);
+    const yearNum = parseInt(year, 10);
+    
+    incomeEntries = incomeEntries.filter((income) => {
+      const dateStr = income.date;
+      if (!dateStr) return false;
+      
+      let incomeDate;
+      
+      // Try to parse ISO format (YYYY-MM-DD)
+      if (dateStr.includes('-')) {
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+          incomeDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        }
+      }
+      // Try to parse DD/MM/YYYY format
+      else if (dateStr.includes('/')) {
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+          // Assume DD/MM/YYYY format
+          incomeDate = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+        }
+      }
+      
+      if (!incomeDate || isNaN(incomeDate.getTime())) {
+        return false;
+      }
+      
+      return incomeDate.getFullYear() === yearNum && 
+             incomeDate.getMonth() + 1 === monthNum;
+    });
+  }
 
   res.status(200).json({
     success: true,
@@ -65,6 +103,17 @@ exports.addIncome = asyncHandler(async (req, res) => {
     date,
     notes,
   });
+
+  // Atomically update user's totals for income and recompute balance
+  await User.updateOne(
+    { _id: req.user._id },
+    { $inc: { totalIncome: amount } }
+  );
+  const updatedUser = await User.findById(req.user._id).select('totalIncome totalExpense');
+  await User.updateOne(
+    { _id: req.user._id },
+    { $set: { totalBalance: updatedUser.totalIncome - updatedUser.totalExpense } }
+  );
 
   // Log add income activity
   await UserActivity.create({

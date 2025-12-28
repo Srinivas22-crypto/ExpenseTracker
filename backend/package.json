@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "server": "nodemon server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "kill-port": "node -e \"const { exec } = require('child_process'); const port = process.argv[2] || '5000'; const isWin = process.platform === 'win32'; const cmd = isWin ? `powershell -Command \\\"Get-NetTCPConnection -LocalPort ${port} | Select-Object -ExpandProperty OwningProcess | ForEach-Object { Stop-Process -Id $_ -Force }\\\"` : `lsof -ti:${port} | xargs kill -9`; exec(cmd, (err) => { if (err) console.log('No process found on port', port); else console.log('Process on port', port, 'terminated'); });\""
   },
   "keywords": [
     "expense-tracker",

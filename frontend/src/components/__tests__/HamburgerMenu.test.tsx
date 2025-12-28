@@ -1,13 +1,13 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { BrowserRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { HamburgerMenu } from '../HamburgerMenu';
 
 const renderWithRouter = (component: React.ReactElement) => {
   return render(
-    <BrowserRouter>
+    <MemoryRouter>
       {component}
-    </BrowserRouter>
+    </MemoryRouter>
   );
 };
 

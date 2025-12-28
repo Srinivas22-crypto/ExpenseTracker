@@ -29,9 +29,20 @@ export interface StatsResponse {
   };
 }
 
+export interface TransactionResponseWithTotals extends TransactionResponse {
+  incomeTotal?: number;
+  expenseTotal?: number;
+  balance?: number;
+}
+
 export const transactionService = {
-  getTransactions: async (): Promise<TransactionResponse> => {
-    const response = await API.get('/transactions');
+  getTransactions: async (month?: number, year?: number): Promise<TransactionResponseWithTotals> => {
+    const params: any = {};
+    if (month && year) {
+      params.month = month;
+      params.year = year;
+    }
+    const response = await API.get('/transactions', { params });
     return response.data;
   },
 
