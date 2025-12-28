@@ -1,73 +1,80 @@
-# Welcome to your Lovable project
+# finwatch-hub — Expense Tracker
 
-## Project info
+This repository contains a full-stack Expense Tracker application separated into two independently runnable parts: the frontend (React + Vite) and the backend (Node.js + Express).
 
-**URL**: https://lovable.dev/projects/b0bd960c-b0f9-412e-aa34-6b8bd2fb4f75
+---
 
-## How can I edit this code?
+## Project layout ✅
 
-There are several ways of editing your application.
+Root structure (standardized):
 
-**Use Lovable**
+```
+project-root/
+├── frontend/        # React app (Vite + TypeScript)
+│   ├── src/
+│   └── package.json
+├── backend/         # Express API
+│   ├── controllers/
+│   ├── routes/
+│   └── package.json
+└── README.md        # this file (how to run and structure)
+```
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/b0bd960c-b0f9-412e-aa34-6b8bd2fb4f75) and start prompting.
+Notes:
+- The repository already has `frontend/` and `backend/` folders with their own `package.json` and source files.
+- I did **not** move core source files because they are already organized correctly.
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## How to run locally 🔧
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Prerequisites: Node.js (v18+) and npm or bun.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Backend (API):
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```powershell
+cd backend
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Frontend (UI):
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```powershell
+cd frontend
+npm install
+npm run dev
+```
 
-**Use GitHub Codespaces**
+Each part runs independently and can be developed/tested independently.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## Files moved / cleanup decisions ✏️
 
-This project is built with:
+- No code files needed to be moved — the project already follows the desired structure.
+- **Flagged duplicates / recommended cleanup (do not delete automatically):**
+	- `package.json` at repository root duplicates the frontend `package.json` (same content). Recommendation: keep one canonical `frontend/package.json` and either remove or replace the root `package.json` with a lightweight top-level orchestrator if you want top-level scripts.
+	- `bun.lockb` exists both at root and under `frontend/`. Keep the lockfile where your package manager is used; consider removing the duplicate lockfile if unused.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## Path & script changes required
 
-Simply open [Lovable](https://lovable.dev/projects/b0bd960c-b0f9-412e-aa34-6b8bd2fb4f75) and click on Share -> Publish.
+- No import path changes were necessary because no source files were moved.
+- If you decide to remove the root `package.json`, be sure to run `npm install` in `frontend/` and `backend/` separately and update any CI/CD scripts that reference the root package.json.
 
-## Can I connect a custom domain to my Lovable project?
+---
 
-Yes, you can!
+## Risks & edge cases ⚠️
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- Deleting the duplicate `package.json` or `bun.lockb` without updating CI, deployment, or contributor instructions can break tooling that expects those files at the repo root.
+- If you later consolidate into a monorepo (workspaces), you will need to harmonize devDependencies and update scripts.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+---
+
+If you'd like, I can:
+- apply the recommended clean-up (remove or replace the root `package.json`, remove duplicate lockfiles) and update CI scripts accordingly, or
+- generate a minimal top-level `package.json` with scripts to start frontend and backend from the root.
+
+Tell me which option you prefer and I will proceed. ✅
