@@ -9,8 +9,7 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 5173,
     allowedHosts: [
-      'expensetracker-4-670k.onrender.com',
-      'expensetracker-trro.onrender.com'
+      'expensetracker-4-670k.onrender.com'
     ],
   },
   plugins: [
