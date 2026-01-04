@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 5173,
     allowedHosts: [
-      'expensetracker-1-1kc9.onrender.com',
+      'expensetracker-4-670k.onrender.com',
       'expensetracker-trro.onrender.com'
     ],
   },
