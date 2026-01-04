@@ -4,6 +4,7 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
+  base: '/',
   server: {
     host: "::",
     port: 5173,
@@ -25,7 +26,13 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
+    outDir: 'dist',
     sourcemap: false,
     minify: 'terser',
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
   },
 }));
