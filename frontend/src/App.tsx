@@ -11,6 +11,7 @@ import { DashboardProvider } from "@/context/DashboardContext";
 import { MenuProvider } from "@/context/MenuContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import React from "react";
 
 import { LandingPage } from "./pages/LandingPage";
 import { Login } from "./pages/Login";
@@ -95,7 +96,6 @@ const routerConfig = createBrowserRouter(
       // v7_startTransition: Uses React's startTransition for navigations
       // This makes route transitions non-blocking and improves perceived performance
       // Required to suppress deprecation warnings and prepare for React Router v7
-      v7_startTransition: true,
       
       // v7_relativeSplatPath: Changes how relative paths work with splat routes (*)
       // This fixes edge cases with relative navigation in v7
